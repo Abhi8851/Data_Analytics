@@ -1,0 +1,132 @@
+import pandas as pd
+
+import numpy as np
+
+import matplotlib.pyplot as plt 
+
+df = pd.read_csv('train_u6lujuX_CVtuZ9i.csv') # reading the dataset and putting in the dataframe
+
+df.head() # checking the data present in the csv file -- initiaal 5 rows
+
+df.describe() # method helps to get the various quantitative aspects of Data
+
+# now we will do some exploratory data analysis
+
+
+df.ApplicantIncome.hist(bins = 100)
+
+df['ApplicantIncome'].hist(bins = 50)
+
+plt.show()
+
+df.boxplot(column = 'ApplicantIncome')
+
+plt.show()
+
+df.boxplot(column = 'ApplicantIncome', by = 'Education')
+
+plt.show()
+
+df['LoanAmount'].hist(bins = 50)
+
+plt.show()
+
+temp1 = df['Credit_History'].value_counts(ascending = True)
+
+temp1
+
+temp2 = df.pivot_table(values = 'Loan_Status' , index = ['Credit_History'],aggfunc = lambda x : x.map({'Y':1, 'N':0}).mean())
+
+temp2
+
+fig = plt.figure(figsize=(10,4))
+ax1 = fig.add_subplot(121)
+ax1.set_xlabel('Credit_History')
+ax1.set_ylabel('Count of Applicants')
+ax1.set_title("Applicants by Credit_History")
+temp1.plot(kind='bar')
+
+ax2 = fig.add_subplot(122)
+temp2.plot(kind = 'bar')
+ax2.set_xlabel('Credit_History')
+ax2.set_ylabel('Probability of getting loan')
+ax2.set_title("Probability of getting loan by credit history")
+
+plt.show()
+
+temp3 = pd.crosstab(df['Credit_History'],df['Loan_Status'])
+
+
+temp3.plot(kind = 'bar' ,stacked = True,color = ['red','blue'])
+
+plt.show()
+
+df.apply(lambda x : sum(x.isnull()),axis = 0)
+
+#df['LoanAmount'].fillna(df['LoanAmount'].mean(), inplace = True)
+
+df['LoanAmount'].count()
+
+df.boxplot(['LoanAmount'], by = ['Education','Self_Employed'])
+
+plt.show()
+
+df['Self_Employed'].value_counts()
+
+df['Self_Employed'].fillna('No', inplace = True)
+
+table = df.pivot_table(values = 'LoanAmount',index = 'Self_Employed',columns = 'Education',
+                      aggfunc = np.median)#creating the pivot table
+
+print(df.loc[df['LoanAmount'].isnull(), ['Self_Employed','Education',
+                                          'LoanAmount']])
+
+idx = df.loc[df['LoanAmount'].isnull(), ['Self_Employed','Education', 'LoanAmount']].index
+print (idx)
+
+df['LoanAmount'] = df.groupby(['Education','Self_Employed'])['LoanAmount'].apply(lambda x:x.fillna(x.median()))
+
+print(df.loc[df.index.isin(idx),['Self_Employed','Education','LoanAmount']])
+
+
+from sklearn.preprocessing import LabelEncoder # because sklearn only work with the numeric data
+
+var_mod = ['Gender','Married', 'Dependents', 'Education',
+           'Self_Employed','Property_Area','Loan_Status']
+le = LabelEncoder()
+
+for i in var_mod:
+    df[i] = le.fit_transform(df[i].astype(str))
+
+df.dtypes
+
+#Building the Model
+
+from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.tree import DecisionTreeClassifier
+from sklearn import metrics
+
+def Classification_Model(model, data, predictors, outcome):
+    #fit the model
+    model.fit(data[predictors], data[outcome]);
+    
+    #make predictions of training dataset
+    predictions = model.predict(data[predictors])
+    
+    #print accuracy
+    
+    accuracy = metrics.accuracy_score(predictions,data[outcome])
+    print("Accuracy  : %s" % "{0:.3%}".format(accuracy));
+    
+
+df['Credit_History'].fillna(1, inplace = True)
+
+
+
+model = LogisticRegression()
+predictor_var = ['Credit_History']
+outcome_var = 'Loan_Status'
+
+Classification_Model(model,df, predictor_var, outcome_var)
+
